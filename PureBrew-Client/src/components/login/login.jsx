@@ -6,6 +6,7 @@ import { UserContext } from "../../context/UserContext";
 import ReCAPTCHA from "react-google-recaptcha";
 import { useBackupCode } from "../../api/api";
 import bgImage from "../../assets/cover.jpg";
+import { verifyFormDataIntegrity, verifyAPIResponseIntegrity } from '../../utils/integrityUtils';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -17,6 +18,18 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // ✅ Verify login data integrity
+    const loginData = {
+      email: email,
+      password: password
+    };
+
+    if (!verifyFormDataIntegrity(loginData)) {
+      toast.error("Invalid login data detected.");
+      return;
+    }
+
     setLoading(true);
     if (!recaptchaToken) {
       toast.error("Please verify you are human");
@@ -30,6 +43,12 @@ export default function Login() {
         token: recaptchaToken,
       });
 
+      // ✅ Verify API response integrity
+      if (!verifyAPIResponseIntegrity(res)) {
+        toast.error("Invalid response from server");
+        return;
+      }
+
       if (res.data.user) {
         localStorage.setItem("user", JSON.stringify(res.data.user));
         setUser(res.data.user);
@@ -40,8 +59,9 @@ export default function Login() {
       }
     } catch (err) {
       toast.error(err.response?.data?.msg || "Login failed");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (

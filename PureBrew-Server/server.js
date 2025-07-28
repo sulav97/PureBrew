@@ -148,4 +148,9 @@ app.get("/api/users/activity-logs", async (req, res) => {
 });
 
 const PORT = process.env.PORT || 5001;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+app.listen(PORT, () => {
+  // Production-ready logging (no sensitive info)
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`🚀 Server running on port ${PORT}`);
+  }
+});

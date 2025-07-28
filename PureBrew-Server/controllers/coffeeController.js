@@ -13,9 +13,7 @@ exports.createcoffee = async (req, res) => {
 
 exports.getAllcoffees = async (req, res) => {
   try {
-    console.log("Fetching all coffees...");
     const coffees = await Coffee.find();
-    console.log("Coffees fetched:", coffees);
     res.json(coffees);
   } catch (err) {
     res.status(500).json({ msg: err.message });

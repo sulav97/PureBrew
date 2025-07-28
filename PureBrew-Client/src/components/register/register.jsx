@@ -4,6 +4,7 @@ import API from "../../api/api";
 import toast from "react-hot-toast";
 import ReCAPTCHA from "react-google-recaptcha";
 import bgImage from "../../assets/cover.jpg";
+import { verifyFormDataIntegrity, verifyAPIResponseIntegrity } from '../../utils/integrityUtils';
 
 export default function Register() {
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ export default function Register() {
   });
   const [errors, setErrors] = useState({});
   const [passwordStrength, setPasswordStrength] = useState(0); // 0-4
+  const [loading, setLoading] = useState(false);
 
   const validateName = (name) => /^[A-Za-z\s]{2,}$/.test(name.trim());
   const validateEmail = (email) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim());
@@ -64,23 +66,45 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.token) {
-      toast.error("Please verify you are human");
+    
+    // ✅ Verify registration data integrity
+    const registrationData = {
+      name: form.name,
+      email: form.email,
+      password: form.password
+    };
+
+    if (!verifyFormDataIntegrity(registrationData)) {
+      toast.error("Invalid registration data detected.");
       return;
     }
-    if (!validateForm()) return;
+
+    if (form.password !== form.confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    setLoading(true);
     try {
-      const res = await API.post("/auth/register", {
-        name: form.name.trim(),
-        email: form.email.trim(),
+      const response = await API.post("/auth/register", {
+        name: form.name,
+        email: form.email,
         password: form.password,
         token: form.token,
       });
-      toast.success("Registered successfully!");
+      
+      // ✅ Verify API response integrity
+      if (!verifyAPIResponseIntegrity(response)) {
+        toast.error("Invalid response from server");
+        return;
+      }
+
+      toast.success("Registration successful! Please check your email for verification.");
       navigate("/login");
-    } catch (err) {
-      const msg = err.response?.data?.msg || "Something went wrong";
-      toast.error(msg);
+    } catch (error) {
+      toast.error(error.response?.data?.msg || error.message || "Registration failed");
+    } finally {
+      setLoading(false);
     }
   };
 

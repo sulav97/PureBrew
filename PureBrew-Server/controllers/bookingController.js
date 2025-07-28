@@ -2,46 +2,22 @@ const Booking = require("../models/Booking");
 
 const createBooking = async (req, res) => {
   try {
-    console.log("Received booking request body:", req.body);
-    console.log("User:", req.user);
-    
-    const { coffee, quantity, totalPrice, address, phone, weight, pricePerGram, paymentMethod, khaltiTransactionId } = req.body;
-    
-    // Validate required fields
-    if (!address) {
-      return res.status(400).json({ msg: "Address is required" });
-    }
-    if (!phone) {
-      return res.status(400).json({ msg: "Phone is required" });
-    }
-    
-    // Set payment status based on payment method
-    let paymentStatus = 'pending';
-    if (paymentMethod === 'khalti' && khaltiTransactionId) {
-      paymentStatus = 'completed';
-    }
+    const { products, totalAmount, shippingAddress, contact, paymentMethod, paymentStatus, khaltiTransactionId } = req.body;
     
     const bookingData = {
-      user: req.user,
-      coffee,
-      quantity,
-      totalPrice,
-      weight: parseFloat(weight),
-      pricePerGram,
-      address,
-      phone,
-      paymentMethod: paymentMethod || 'cod',
+      userId: req.user._id,
+      products,
+      totalAmount,
+      shippingAddress,
+      contact,
+      paymentMethod,
       paymentStatus,
       khaltiTransactionId
     };
-    
-    console.log("Creating booking with data:", bookingData);
-    
+
     const booking = await Booking.create(bookingData);
-    console.log("Booking created successfully:", booking);
     res.status(201).json(booking);
   } catch (err) {
-    console.error("Error creating booking:", err);
     res.status(500).json({ msg: err.message });
   }
 };

@@ -8,6 +8,7 @@ import { createBooking } from "../../api/api";
 import toast from "react-hot-toast";
 import { v4 as uuidv4 } from "uuid";
 import { generateEsewaSignature } from "../../utils/esewaSignature";
+import { verifyFormDataIntegrity, verifyAPIResponseIntegrity } from '../../utils/integrityUtils';
 
 const publicTestKey = "test_public_key_402c2b0e98364222bb1c1ab02369cefd";
 
@@ -33,16 +34,13 @@ const Payment = ({
     productUrl: "http://localhost:5174",
     eventHandler: {
       onSuccess(payload) {
-        console.log("Khalti payment successful:", payload);
         handlePaymentSuccess(payload.token);
       },
       onError(error) {
-        console.log("Khalti payment error:", error);
         setError("Payment failed. Please try again.");
         setLoading(false);
       },
       onClose() {
-        console.log("Khalti widget closed");
         setLoading(false);
       },
     },
@@ -68,14 +66,6 @@ const Payment = ({
 
   const handlePaymentSuccess = async (transactionId = null) => {
     try {
-      console.log("Payment success - creating bookings with data:", {
-        address,
-        contact,
-        paymentMethod,
-        transactionId,
-        cartLength: cart.length
-      });
-
       // Send each cart item as a separate booking
       for (const item of cart) {
         const bookingData = {
@@ -90,7 +80,6 @@ const Payment = ({
           khaltiTransactionId: transactionId
         };
         
-        console.log("Creating booking with data:", bookingData);
         await createBooking(bookingData);
       }
       
@@ -114,12 +103,6 @@ const Payment = ({
 
   const handleCashOnDelivery = async () => {
     try {
-      console.log("Cash on delivery - creating bookings with data:", {
-        address,
-        contact,
-        cartLength: cart.length
-      });
-
       // Send each cart item as a separate booking
       for (const item of cart) {
         const bookingData = {
@@ -133,7 +116,6 @@ const Payment = ({
           paymentMethod: 'cod'
         };
         
-        console.log("Creating booking with data:", bookingData);
         await createBooking(bookingData);
       }
       
@@ -149,24 +131,32 @@ const Payment = ({
   };
 
   const handleConfirmOrder = async () => {
-    console.log("handleConfirmOrder called with:", {
-      contact,
-      address,
-      cartLength: cart.length,
-      paymentMethod
-    });
     
     if (!contact || !address) {
-      setError("Please enter address and contact number.");
+      toast.error("Please fill in all required fields.");
       return;
     }
+
+    // ✅ Verify payment data integrity
+    const paymentData = {
+      contact,
+      address,
+      cart,
+      paymentMethod,
+      total
+    };
+
+    if (!verifyFormDataIntegrity(paymentData)) {
+      toast.error("Invalid payment data detected.");
+      return;
+    }
+
     if (cart.length === 0) return;
     
     setLoading(true);
     
     if (paymentMethod === "khalti") {
       if (checkout) {
-        console.log("Processing Khalti payment for:", cart, address, contact, paymentMethod, total);
         checkout.show({ amount: total * 100 }); // Khalti expects amount in paisa (multiply by 100)
       } else {
         console.error("KhaltiCheckout is not initialized");
@@ -174,7 +164,37 @@ const Payment = ({
         setLoading(false);
       }
     } else if (paymentMethod === "cod") {
-      handleCashOnDelivery();
+      try {
+        // Send each cart item as a separate booking
+        for (const item of cart) {
+          const bookingData = {
+            products: [{
+              productId: item._id,
+              quantity: item.quantity,
+              price: item.price
+            }],
+            totalAmount: item.price * item.quantity,
+            shippingAddress: address,
+            contact: contact,
+            paymentMethod: "Cash on Delivery",
+            paymentStatus: "Pending"
+          };
+
+          const response = await createBooking(bookingData);
+          
+          // ✅ Verify API response integrity
+          if (!verifyAPIResponseIntegrity(response)) {
+            toast.error("Invalid response from server");
+            return;
+          }
+        }
+
+        toast.success("Order placed successfully! Pay on delivery.");
+        setCart([]);
+        navigate("/success");
+      } catch (error) {
+        toast.error("Failed to place order. Please try again.");
+      }
     } else if (paymentMethod === "esewa") {
       handleEsewaPayment();
     }
@@ -195,7 +215,6 @@ const Payment = ({
           paymentMethod: 'esewa'
         };
         
-        console.log("Creating booking with data:", bookingData);
         await createBooking(bookingData);
       }
       

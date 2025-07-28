@@ -6,8 +6,13 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:prod": "NODE_ENV=production vite build --mode production",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "security:audit": "npm audit && npm audit fix",
+    "security:check": "npm audit --audit-level=moderate",
+    "integrity:verify": "npm ci --only=production && npm audit",
+    "integrity:frontend": "npm run build:prod && npm audit"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",

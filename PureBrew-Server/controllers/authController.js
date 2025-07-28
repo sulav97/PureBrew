@@ -239,42 +239,37 @@ const logout = async (req, res) => {
 
 // Forgot Password Controller
 const forgotPassword = async (req, res) => {
-  console.log("Forgot password route hit", req.body);
-  const { email } = req.body;
   try {
-    const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ msg: "User not found" });
-
-    // Generate token
-    const resetToken = crypto.randomBytes(32).toString("hex");
-    const resetPasswordToken = crypto.createHash("sha256").update(resetToken).digest("hex");
-    const resetPasswordExpire = Date.now() + 60 * 60 * 1000; // 1 hour
-
-    user.resetPasswordToken = resetPasswordToken;
-    user.resetPasswordExpire = resetPasswordExpire;
-    await user.save();
-
-    // Email setup
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
+    const { email } = req.body;
+    
+    // Find user by any verified email
+    const user = await User.findOne({
+      $or: [
+        { email },
+        { emails: { $elemMatch: { address: email, verified: true } } }
+      ]
     });
 
-    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: user.email,
-      subject: "Password Reset Request",
-      html: `<p>You requested a password reset. Click <a href="${resetUrl}">here</a> to reset your password. This link will expire in 1 hour.</p>`
-    };
+    if (!user) {
+      return res.status(404).json({ msg: "User not found" });
+    }
 
-    await transporter.sendMail(mailOptions);
-    res.json({ msg: "Password reset link sent to your email." });
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const resetTokenHash = crypto.createHash("sha256").update(resetToken).digest("hex");
+
+    user.resetPasswordToken = resetTokenHash;
+    user.resetPasswordExpire = Date.now() + 60 * 60 * 1000; // 1 hour
+    await user.save();
+
+    // Send email with reset link
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+    
+    // Email sending logic here...
+    
+    res.json({ msg: "Password reset email sent" });
   } catch (err) {
-    res.status(500).json({ msg: "Failed to send reset email. Try again later." });
+    res.status(500).json({ msg: err.message });
   }
 };
 

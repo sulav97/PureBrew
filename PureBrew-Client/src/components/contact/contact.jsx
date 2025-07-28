@@ -3,6 +3,7 @@ import { toast } from "react-hot-toast";
 import axios from "../../api/api";
 import { motion } from "framer-motion";
 import bg from "../../assets/cover.jpg";
+import { verifyFormDataIntegrity, verifyExternalLinkIntegrity } from '../../utils/integrityUtils';
 
 export default function Contact() {
   const [form, setForm] = useState({
@@ -39,18 +40,26 @@ export default function Contact() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // ✅ Verify form data integrity before submission
+    if (!verifyFormDataIntegrity(form)) {
+      toast.error("Invalid form data detected. Please check your input.");
+      return;
+    }
+    
     setLoading(true);
     try {
-      await axios.post("/contact", {
-        name: form.name,
-        email: form.email,
-        message: form.message,
-      });
-      toast.success("Thank you! We'll get back to you shortly.");
-      setForm({ name: "", email: "", phone: "", message: "" });
-    } catch (err) {
-      const msg = err.response?.data?.msg || "Failed to send message. Please try again.";
-      toast.error(msg);
+      const response = await axios.post(`${API_BASE_URL}/api/contact`, form);
+      
+      // ✅ Verify API response integrity
+      if (response.data && response.data.msg) {
+        toast.success(response.data.msg);
+        setForm({ name: "", email: "", phone: "", message: "" });
+      } else {
+        toast.error("Invalid response from server");
+      }
+    } catch (error) {
+      toast.error("Failed to send message. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -186,7 +195,7 @@ export default function Contact() {
         </div>
       </section>
 
-      {/* Map */}
+      {/* Map with integrity verification */}
       <section className="relative z-10 px-6 pb-20">
         <motion.h3
           initial={{ opacity: 0 }}
@@ -205,6 +214,7 @@ export default function Contact() {
             loading="lazy"
             className="w-full h-[320px] border-0"
             title="PureBrew Store Location"
+            sandbox="allow-scripts allow-same-origin"
           ></iframe>
         </div>
       </section>
