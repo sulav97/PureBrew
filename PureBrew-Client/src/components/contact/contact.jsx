@@ -42,7 +42,7 @@ export default function Contact() {
     e.preventDefault();
     
     // ✅ Verify form data integrity before submission
-    if (!verifyFormDataIntegrity(form)) {
+    if (!verifyFormDataIntegrity(form, 'contact')) {
       toast.error("Invalid form data detected. Please check your input.");
       return;
     }

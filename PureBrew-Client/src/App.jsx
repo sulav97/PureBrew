@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 // Components
@@ -25,8 +25,23 @@ import ResetPassword from "./components/login/ResetPassword";
 import VerifyEmail from "./components/verify/VerifyEmail";
 
 import { Toaster } from "react-hot-toast";
+import { getCsrfToken } from "./api/api";
 
 const App = () => {
+  // ✅ Initialize CSRF token when app starts
+  useEffect(() => {
+    const initializeCsrf = async () => {
+      try {
+        await getCsrfToken();
+        console.log("✅ CSRF token initialized");
+      } catch (err) {
+        console.error("❌ Failed to initialize CSRF token:", err);
+      }
+    };
+
+    initializeCsrf();
+  }, []);
+
   return (
     <Router>
       <Toaster position="top-right" reverseOrder={false} />

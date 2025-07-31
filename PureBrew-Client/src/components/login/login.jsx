@@ -25,7 +25,7 @@ export default function Login() {
       password: password
     };
 
-    if (!verifyFormDataIntegrity(loginData)) {
+    if (!verifyFormDataIntegrity(loginData, 'login')) {
       toast.error("Invalid login data detected.");
       return;
     }
