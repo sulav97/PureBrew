@@ -74,7 +74,7 @@ export default function Register() {
       password: form.password
     };
 
-    if (!verifyFormDataIntegrity(registrationData)) {
+    if (!verifyFormDataIntegrity(registrationData, 'registration')) {
       toast.error("Invalid registration data detected.");
       return;
     }

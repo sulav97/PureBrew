@@ -146,7 +146,7 @@ const Payment = ({
       total
     };
 
-    if (!verifyFormDataIntegrity(paymentData)) {
+    if (!verifyFormDataIntegrity(paymentData, 'payment')) {
       toast.error("Invalid payment data detected.");
       return;
     }
