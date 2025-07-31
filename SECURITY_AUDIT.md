@@ -21,7 +21,7 @@ Pure Brew beans is a full-stack e-commerce application with comprehensive securi
   - Password strength meter in registration UI
   - bcryptjs hashing (10 rounds)
   - Password history tracking (prevents reuse of last 5)
-  - 90-day password expiry enforcement
+  - 7-day password expiry enforcement
 
 - ✅ **Account Lockout & Rate Limiting**
   - 5 failed login attempts per 15 minutes per IP (express-rate-limit)
