@@ -4,6 +4,7 @@
     "body-parser": "^2.2.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
+    "csurf": "^1.11.0",
     "dotenv": "^17.2.0",
     "express": "^5.1.0",
     "express-rate-limit": "^8.0.1",
@@ -26,6 +27,13 @@
     "dev": "nodemon server.js",
     "security:audit": "npm audit && npm audit fix",
     "security:check": "npm audit --audit-level=moderate",
-    "integrity:verify": "npm ci --only=production && npm audit"
+    "integrity:verify": "npm ci --only=production && npm audit",
+    "test:csrf": "node test-csrf.js",
+    "test:csrf-fix": "node test-csrf-fix.js",
+    "test:csrf-recaptcha": "node test-csrf-recaptcha.js",
+    "test:security": "node test-security-comprehensive.js",
+    "test:penetration": "node test-penetration.js",
+    "test:all": "npm run test:csrf && npm run test:security && npm run test:penetration",
+    "security:full": "npm run security:audit && npm run test:all"
   }
 }

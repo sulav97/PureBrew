@@ -83,16 +83,16 @@ const login = async (req, res) => {
 
     if (user.isBlocked) return res.status(403).json({ msg: "User is blocked. Please contact support." });
 
-    // Password expiry: 90 days
-    if (user.passwordLastChanged && (Date.now() - new Date(user.passwordLastChanged).getTime()) > 90*24*60*60*1000) {
+    // Password expiry: 7 days
+    if (user.passwordLastChanged && (Date.now() - new Date(user.passwordLastChanged).getTime()) > 7*24*60*60*1000) {
       return res.status(403).json({ msg: "Password expired. Please reset your password." });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
-      // Lock account after 5 failed attempts for 15 minutes
-      if (user.failedLoginAttempts >= 5) {
+      // Lock account after 10 failed attempts for 15 minutes
+      if (user.failedLoginAttempts >= 10) {
         user.lockoutUntil = new Date(Date.now() + 15 * 60 * 1000);
         await user.save();
         return res.status(403).json({ msg: "Account locked due to too many failed login attempts. Try again in 15 minutes." });
@@ -289,16 +289,16 @@ const resetPassword = async (req, res) => {
     if (!strongPassword) {
       return res.status(400).json({ msg: "Password must be at least 8 characters, include upper, lower, number, and special character." });
     }
-    // Prevent password reuse (last 5 passwords)
+    // Prevent password reuse (last 2 passwords)
     for (const oldHash of (user.passwordHistory || [])) {
       if (await bcrypt.compare(password, oldHash)) {
-        return res.status(400).json({ msg: "You cannot reuse your last 5 passwords." });
+        return res.status(400).json({ msg: "You cannot reuse your last 2 passwords." });
       }
     }
     const hashedPassword = await bcrypt.hash(password, 10);
     user.password = hashedPassword;
     user.passwordLastChanged = new Date();
-    user.passwordHistory = [hashedPassword, ...(user.passwordHistory || [])].slice(0, 5);
+    user.passwordHistory = [hashedPassword, ...(user.passwordHistory || [])].slice(0, 2);
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
     await user.save();

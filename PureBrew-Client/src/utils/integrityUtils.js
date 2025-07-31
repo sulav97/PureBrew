@@ -66,15 +66,29 @@ export const verifyExternalLinkIntegrity = (href) => {
 /**
  * Verify form data integrity
  * @param {Object} formData - Form data object
+ * @param {string} formType - Type of form ('registration', 'contact', etc.)
  * @returns {boolean} - Whether the form data is valid
  */
-export const verifyFormDataIntegrity = (formData) => {
+export const verifyFormDataIntegrity = (formData, formType = 'contact') => {
   if (!formData || typeof formData !== 'object') {
     return false;
   }
   
-  // Check for required fields
-  const requiredFields = ['name', 'email', 'message'];
+  // Define required fields based on form type
+  let requiredFields = [];
+  if (formType === 'registration') {
+    requiredFields = ['name', 'email', 'password'];
+  } else if (formType === 'contact') {
+    requiredFields = ['name', 'email', 'message'];
+  } else if (formType === 'login') {
+    requiredFields = ['email', 'password'];
+  } else if (formType === 'payment') {
+    requiredFields = ['contact', 'address', 'cart', 'paymentMethod', 'total'];
+  } else {
+    // Default to contact form requirements
+    requiredFields = ['name', 'email', 'message'];
+  }
+  
   const hasRequiredFields = requiredFields.every(field => 
     formData[field] && typeof formData[field] === 'string' && formData[field].trim().length > 0
   );

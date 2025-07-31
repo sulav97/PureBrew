@@ -33,16 +33,16 @@ exports.updateProfile = async (req, res) => {
       if (!user) return res.status(404).json({ msg: "User not found" });
       const isMatch = await bcrypt.compare(currentPassword, user.password);
       if (!isMatch) return res.status(400).json({ msg: "Current password is incorrect." });
-      // Prevent password reuse (last 5)
+      // Prevent password reuse (last 2)
       for (const oldHash of (user.passwordHistory || [])) {
         if (await bcrypt.compare(password, oldHash)) {
-          return res.status(400).json({ msg: "You cannot reuse your last 5 passwords." });
+          return res.status(400).json({ msg: "You cannot reuse your last 2 passwords." });
         }
       }
       const hashedPassword = await bcrypt.hash(password, 10);
       update.password = hashedPassword;
       update.passwordLastChanged = new Date();
-      update.passwordHistory = [hashedPassword, ...(user.passwordHistory || [])].slice(0, 5);
+      update.passwordHistory = [hashedPassword, ...(user.passwordHistory || [])].slice(0, 2);
       await User.findByIdAndUpdate(req.user._id, update, { new: true });
       return res.json({ msg: "Password updated successfully" });
     } else {
